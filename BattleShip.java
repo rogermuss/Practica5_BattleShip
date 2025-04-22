@@ -1,4 +1,5 @@
 public class BattleShip {
+
     //El curso de juego estara dado por si el jugador acerto el disparo o fallo el mismo
 
     //La cpu estara creada de forma inicial para hacer aleatorios los tiros, a su vez al acertar aplicara la busqueda de 
@@ -13,5 +14,33 @@ public class BattleShip {
     //en las zonas, pero ayudando a mejorar la busqueda de los barcos
 
     //Se jugara de forma grafica en su totalidad y habra una pausa entre movimientos para hacer el juego realista.
-    
+
+    //Atributos
+    public static final boolean MODO_CPU = true;
+    public static final boolean MODO_VS = false;
+    private TableroBShip tableroJ1;
+    private TableroBShip tableroCPU;
+    private TableroBShip tableroJ2;
+
+
+    public BattleShip(boolean modoDeJuego){
+        //Modo contra CPU
+        if(modoDeJuego){
+            tableroCPU = new TableroBShip();
+            tableroJ1 = new TableroBShip();
+        }
+        //Modo contra otro jugador
+        else{
+            tableroJ1 = new TableroBShip();
+            tableroJ2 = new TableroBShip();
+        }
+    }
+
+
+
+    //METODOS PARA JUEGO CONTRA CPU.
+
+
+    //METODOS PARA JUEGO CONTRA JUGADOR.
+
 }

@@ -5,7 +5,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -25,12 +24,9 @@ public class MenuBShip {
     private JButton opcionVsCPU = new JButton("Jugador vs CPU");
     private JButton opcionVsJugador = new JButton("Jugador vs Jugador");
     private JButton opcionSalir = new JButton("Salir");
-    private JMenuBar menuBar = new JMenuBar();
     private JFrame ventanaMenu = new JFrame("Version 1.0");
-    private JFrame tableroJ1 = new JFrame();
-    private JFrame tableroJ2 = new JFrame();
-    private JFrame tableroCPU = new JFrame();
     private JPanel panelInferior = new JPanel();
+    private BattleShip juegoBattleShip;
 
 
     public MenuBShip() {
@@ -84,11 +80,13 @@ public class MenuBShip {
         ventanaMenu.setVisible(true);
     }
 
+    //Se genera el juego y al terminar regresa al menu del juego.
     public void opcionVsCPU(){
          opcionVsCPU.addActionListener(e -> {
             JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs CPU");
             ventanaMenu.setVisible(false);
-            // aqui puedes llamar al metodo para iniciar ese modo
+            juegoBattleShip = new BattleShip(BattleShip.MODO_CPU);
+            ventanaMenu.setVisible(true);
         });
     }
 
@@ -106,7 +104,9 @@ public class MenuBShip {
     public void opcionVsJugador(){
         opcionVsJugador.addActionListener(e -> {
             JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs Jugador");
-            // aqui puedes llamar al metodo para iniciar ese modo
+            ventanaMenu.setVisible(false);
+            juegoBattleShip = new BattleShip(BattleShip.MODO_VS);
+            ventanaMenu.setVisible(true);        
         });
     }
     public void opcionSalir(){
@@ -119,7 +119,7 @@ public class MenuBShip {
     }
 
     public static void main(String[] args) {
-        MenuBShip miVentana = new MenuBShip();
+        new MenuBShip();
     }
 
 }

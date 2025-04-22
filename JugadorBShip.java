@@ -3,4 +3,6 @@ public class JugadorBShip{
     
     //Desconozco si sera necesario una serie de botones con los png para sobreponerlos en la zonaa de la ventana.
     
+    //Atributos
+    private TableroBShip tablero;
 }
