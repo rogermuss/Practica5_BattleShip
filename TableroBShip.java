@@ -17,14 +17,16 @@ public class TableroBShip {
     private JPanel barcosPanel = new JPanel();
     private JPanel panelDePaneles = new JPanel();
     private JLayeredPane layeredPane = new JLayeredPane();
+    private ArrayList<BarcoBShip> barcos = new ArrayList<>();
     public final int MARGEN_FRAME_HEIGHT = 300;
     public final int MARGEN_FRAME_WIDTH = 420;
 
     
 
 
-    //IMPORTANTEEEEEEE
     //Ajustar el el tableroPanel para que se vea completo; ya que actualmente no se logra visualizar de dicha forma
+    //ACTUALIZACION
+    //SE AJUSTO DE FORMA MANUAL....
     public TableroBShip() {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1920,1080);
@@ -74,7 +76,6 @@ public class TableroBShip {
 
     
     public void ingresarBarcos(){
-        ArrayList<BarcoBShip> barcos = new ArrayList<>();
         for(int i=1; i<=6; i++){
             barcos.add(new BarcoBShip(i));
         }
@@ -83,7 +84,7 @@ public class TableroBShip {
             barco.hacerArrastrable();
             barco.girarAlRecibirClick();
         
-            JLabel imagenBarco = barco.getImagenBarco();
+            JLabel imagenBarco = barco.getLabelBarco();
             
             // Posición inicial 
             imagenBarco.setBounds(100, 100 + barcos.indexOf(barco) * 70, 
@@ -111,8 +112,8 @@ public class TableroBShip {
 
     private void alinearBarcoConCuadricula(JLabel imagenBarco, BarcoBShip barco) {
         // Calcular el tamaño de cada celda de botón
-        int anchoCelda = tableroPanel.getWidth() / 16;
-        int altoCelda = tableroPanel.getHeight() / 16;
+        int anchoCelda = botones[0][0].getWidth();
+        int altoCelda = botones[0][0].getHeight();
         
         // Obtener la posición actual del barco
         int barcoX = imagenBarco.getX();
@@ -129,6 +130,10 @@ public class TableroBShip {
         // Obtener las dimensiones en botones del barco
         int xBarco = barco.getXBarco(); // Longitud horizontal en botones
         int yBarco = barco.getYBarco(); // Longitud vertical en botones
+
+        if(!barco.seRedimensiono()){
+        barco.resizeBarcoABoton(anchoCelda, altoCelda);
+        }
         
         // Asegurar que el barco no se salga del tablero
         if (j + xBarco > 16) {

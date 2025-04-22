@@ -22,15 +22,18 @@ public class BarcoBShip{
     private int XBarco;
     private int yBarco;
     private int tipo;
-    private JLabel imagenBarco;
+    private JLabel labelBarco;
     private Point posicionInicial;
+    private Boolean seRedimensiono = false;
 
     public BarcoBShip(int tipo){
         this.orientacion = LEFT;
         this.tipo = tipo;
         inicializarBarcos();
-        this.imagenBarco = obtenerImagenBarco();
+        this.labelBarco = obtenerImagenBarco();
     }
+
+
 
     public void girar90Grados() {
         // Cambiar orientacion circularmente
@@ -42,7 +45,7 @@ public class BarcoBShip{
         yBarco = temp;
     
         // Obtener el icono actual del JLabel
-        ImageIcon icono = (ImageIcon) imagenBarco.getIcon();
+        ImageIcon icono = (ImageIcon) labelBarco.getIcon();
         if (icono == null) return;
     
         Image imagen = icono.getImage();
@@ -69,12 +72,33 @@ public class BarcoBShip{
         op.filter(bufferedImage, imagenRotada);
     
         // Aplicar nueva imagen al JLabel
-        imagenBarco.setIcon(new ImageIcon(imagenRotada));
-        imagenBarco.setSize(imagenBarco.getPreferredSize()); 
+        labelBarco.setIcon(new ImageIcon(imagenRotada));
+        labelBarco.setSize(labelBarco.getPreferredSize()); 
+
 
         //Ajustar valores
         ajustarMedidas();
     }
+
+    public void resizeBarcoABoton(int widthCelda, int heightCelda) {
+        int anchoDeseado = widthCelda * XBarco;
+        int altoDeseado = heightCelda * yBarco;
+    
+        ImageIcon icono = (ImageIcon) labelBarco.getIcon();
+        if (icono == null) return;
+    
+        Image imagenOriginal = icono.getImage();
+        Image imagenRedimensionada = imagenOriginal.getScaledInstance(anchoDeseado, altoDeseado, Image.SCALE_SMOOTH);
+    
+        labelBarco.setIcon(new ImageIcon(imagenRedimensionada));
+        labelBarco.setSize(anchoDeseado, altoDeseado);
+        seRedimensiono = true;
+    }
+
+    public boolean seRedimensiono(){
+        return  seRedimensiono;
+    }
+    
 
     public void ajustarMedidas(){
         int longTemp = XBarco;
@@ -115,8 +139,8 @@ public class BarcoBShip{
         String rutaImagen = "pngBattleship/Barco"+tipo+".png"; 
         java.net.URL imgURL = getClass().getResource(rutaImagen);
         if (imgURL != null) {
-            ImageIcon imagen = new ImageIcon(imgURL);
-            return new JLabel(imagen);
+            ImageIcon iconoBarco = new ImageIcon(rutaImagen);
+            return new JLabel(iconoBarco);
         } else {
             System.err.println("No se encontró la imagen: " + rutaImagen);
             return new JLabel(); // Retorna un icono vacío en caso de error
@@ -126,7 +150,7 @@ public class BarcoBShip{
     @Override
     public String toString() {
         return "Orientacion: "+orientacion+" Size Barco: "+XBarco+" Tipo: "+tipo+
-        " Imagen Barco: "+imagenBarco; 
+        " Imagen Barco: "+labelBarco; 
     }
 
     public void resizeShipToButton(){
@@ -134,7 +158,7 @@ public class BarcoBShip{
     }
 
     public void girarAlRecibirClick() {
-        imagenBarco.addMouseListener(new MouseAdapter() {
+        labelBarco.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getButton() == java.awt.event.MouseEvent.BUTTON1) { // clic izquierdo
@@ -148,29 +172,29 @@ public class BarcoBShip{
     public void hacerArrastrable() {
         final Point offset = new Point();
     
-        imagenBarco.addMouseListener(new MouseAdapter() {
+        labelBarco.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
                 offset.setLocation(e.getPoint());
             }
         });
     
-        imagenBarco.addMouseMotionListener(new MouseMotionAdapter() {
+        labelBarco.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(java.awt.event.MouseEvent e) {
-                int newX = imagenBarco.getX() + e.getX() - offset.x;
-                int newY = imagenBarco.getY() + e.getY() - offset.y;
+                int newX = labelBarco.getX() + e.getX() - offset.x;
+                int newY = labelBarco.getY() + e.getY() - offset.y;
     
                 // Limites del JFrame (padre del JLabel)
-                Container parent = imagenBarco.getParent();
+                Container parent = labelBarco.getParent();
                 if (parent != null) {
-                    int maxX = parent.getWidth() - imagenBarco.getWidth();
-                    int maxY = parent.getHeight() - imagenBarco.getHeight();
+                    int maxX = parent.getWidth() - labelBarco.getWidth();
+                    int maxY = parent.getHeight() - labelBarco.getHeight();
     
                     newX = Math.max(0, Math.min(newX, maxX));
                     newY = Math.max(0, Math.min(newY, maxY));
     
-                    imagenBarco.setLocation(newX, newY);
+                    labelBarco.setLocation(newX, newY);
                 }
             }
         });
@@ -188,7 +212,7 @@ public class BarcoBShip{
         barquillo.hacerArrastrable();
         barquillo.girarAlRecibirClick();
 
-        JLabel imagenBarco = barquillo.getImagenBarco();
+        JLabel imagenBarco = barquillo.getLabelBarco();
         imagenBarco.setBounds(100, 100, imagenBarco.getPreferredSize().width, imagenBarco.getPreferredSize().height);
         ventana.add(imagenBarco);
     
@@ -201,7 +225,7 @@ public class BarcoBShip{
         int y = (int) (p.getY() - posicionInicial.getY());
 
         // Actualizar la posición del barco (utiliza el método setBounds para moverlo)
-        imagenBarco.setLocation(imagenBarco.getX() + x, imagenBarco.getY() + y);
+        labelBarco.setLocation(labelBarco.getX() + x, labelBarco.getY() + y);
         posicionInicial = p;
     }
     
@@ -218,8 +242,8 @@ public class BarcoBShip{
     public void setOrientacion(int orientacion) {
         this.orientacion = orientacion;
     }
-    public void setImagenBarco(JLabel imagenBarco) {
-        this.imagenBarco = imagenBarco;
+    public void setLabelBarco(JLabel imagenBarco) {
+        this.labelBarco = imagenBarco;
     }
     public void setyBarco(int ancho) {
         this.yBarco = ancho;
@@ -228,8 +252,8 @@ public class BarcoBShip{
     public int getYBarco() {
         return yBarco;
     }
-    public JLabel getImagenBarco() {
-        return imagenBarco;
+    public JLabel getLabelBarco() {
+        return labelBarco;
     }
     public int getXBarco() {
         return XBarco;
