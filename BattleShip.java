@@ -18,21 +18,21 @@ public class BattleShip {
     //Atributos
     public static final boolean MODO_CPU = true;
     public static final boolean MODO_VS = false;
-    private TableroBShip tableroJ1;
-    private TableroBShip tableroCPU;
-    private TableroBShip tableroJ2;
+    private TableroPosicionamientoBShip tableroJ1;
+    private TableroPosicionamientoBShip tableroCPU;
+    private TableroPosicionamientoBShip tableroJ2;
 
 
     public BattleShip(boolean modoDeJuego){
         //Modo contra CPU
         if(modoDeJuego){
-            tableroCPU = new TableroBShip();
-            tableroJ1 = new TableroBShip();
+            tableroCPU = new TableroPosicionamientoBShip();
+            tableroJ1 = new TableroPosicionamientoBShip();
         }
         //Modo contra otro jugador
         else{
-            tableroJ1 = new TableroBShip();
-            tableroJ2 = new TableroBShip();
+            tableroJ1 = new TableroPosicionamientoBShip();
+            tableroJ2 = new TableroPosicionamientoBShip();
         }
     }
 

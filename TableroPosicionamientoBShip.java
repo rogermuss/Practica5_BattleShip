@@ -9,16 +9,16 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
-public class TableroBShip {
+public class TableroPosicionamientoBShip {
     //Atributos
     private JButton[][] botones = new JButton[16][16];
     private JFrame frame = new JFrame("Version 1.0");
     private JPanel tableroPanel = new JPanel();
     private JPanel barcosPanel = new JPanel();
-    private JPanel panelDePaneles = new JPanel();
     private JLayeredPane layeredPane = new JLayeredPane();
+    private JButton continuarButton = new JButton("ok");
     private ArrayList<BarcoBShip> barcos = new ArrayList<>();
-    public final int MARGEN_FRAME_HEIGHT = 300;
+    public final int MARGEN_FRAME_HEIGHT = 285;
     public final int MARGEN_FRAME_WIDTH = 420;
 
     
@@ -27,11 +27,30 @@ public class TableroBShip {
     //Ajustar el el tableroPanel para que se vea completo; ya que actualmente no se logra visualizar de dicha forma
     //ACTUALIZACION
     //SE AJUSTO DE FORMA MANUAL....
-    public TableroBShip() {
+    public TableroPosicionamientoBShip() {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1920,1080);
         frame.setLayout(new BorderLayout()); // Cambiado a BorderLayout
 
+
+        continuarButton.setBackground(Color.BLACK);
+        continuarButton.setForeground(Color.WHITE);
+        continuarButton.setLayout(new BorderLayout());
+        continuarButton.setBounds(1495,0, 50,1030);
+
+        continuarButton.addActionListener(e -> {
+            if(estanBarcosPosicionados()){
+                layeredPane.remove(barcosPanel); // elimina el panel
+                layeredPane.revalidate();   // revalida el layout
+                layeredPane.repaint();      // repinta la interfaz
+
+                frame.setVisible(false);
+            
+                VentanaJuegoBShip ventanaJuego = new VentanaJuegoBShip(botones);
+            }
+                //Agregar condicion para que al ser presionado el boton continue el juego a
+                //otra ventana en la que tendran que disparar a los barcos
+        });
 
         tableroPanel.setLayout(new GridLayout(16,16));
         tableroPanel.setBounds(0, 0, frame.getWidth()-MARGEN_FRAME_WIDTH, frame.getHeight()-MARGEN_FRAME_HEIGHT); // Mismo tamaño que layeredPane
@@ -47,8 +66,7 @@ public class TableroBShip {
             for(int j=0; j<16;j++){
                 botones[i][j] = new JButton();
                 botones[i][j].setBackground(Color.CYAN);
-                //botones[i][j].addActionListener(e -> );
-                
+                botones[i][j].putClientProperty("ocupado", false); // Initialize as false
                 tableroPanel.add(botones[i][j]);
             } 
         }
@@ -58,8 +76,9 @@ public class TableroBShip {
          barcosPanel.setOpaque(false); // Transparente para ver botones
 
           // Añadir paneles al layeredPane
-        layeredPane.add(tableroPanel, JLayeredPane.DEFAULT_LAYER); // Capa inferior
-        layeredPane.add(barcosPanel, JLayeredPane.PALETTE_LAYER); // Capa superior
+        layeredPane.add(tableroPanel, Integer.valueOf(0)); // Capa inferior
+        layeredPane.add(barcosPanel, Integer.valueOf(1));
+        layeredPane.add(continuarButton, Integer.valueOf(2));
         
         // Añadir el layeredPane al frame
         frame.add(layeredPane);
@@ -70,6 +89,23 @@ public class TableroBShip {
         frame.pack(); // Ajusta el tamaño al contenido preferido
         frame.setLocationRelativeTo(null); // Centra la ventana
         frame.setVisible(true);    
+
+
+    }
+
+
+
+    public boolean estanBarcosPosicionados(){
+        int contCuadros = 0;
+        for(int i=0; i<16;i++){
+            for(int j=0; j<16;j++){
+                Object ocupado = botones[i][j].getClientProperty("ocupado");
+                if((boolean)ocupado){
+                    contCuadros++;
+                }
+            } 
+        }
+        return contCuadros == 26;
     }
 
     
@@ -79,19 +115,21 @@ public class TableroBShip {
         for(int i=1; i<=6; i++){
             barcos.add(new BarcoBShip(i));
         }
-
+    
         for(BarcoBShip barco : barcos) {
-            barco.hacerArrastrable();
-            barco.girarAlRecibirClick();
+            barco.hacerArrastrable(botones); // Pass the button grid
+            barco.girarAlRecibirClick(botones);
+            
+            // Rest of the code...
         
             JLabel imagenBarco = barco.getLabelBarco();
             
-            // Posición inicial 
+            // Initial position 
             imagenBarco.setBounds(100, 100 + barcos.indexOf(barco) * 70, 
                                 imagenBarco.getPreferredSize().width, 
                                 imagenBarco.getPreferredSize().height);
         
-            // Referencia final para usar en el listener
+            // Final reference for use in listener
             final BarcoBShip barcoFinal = barco;
             
             imagenBarco.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -103,39 +141,37 @@ public class TableroBShip {
             
             barcosPanel.add(imagenBarco);
         }
-
-
     }
 
     //IMPORTANTEEEEEEEEEEEEEEEEEEE
     //Alinear tambien cuando se desea girar el barco y ajustar el tamaño del barco segun se necesite para formar parte del boton
 
     private void alinearBarcoConCuadricula(JLabel imagenBarco, BarcoBShip barco) {
-        // Calcular el tamaño de cada celda de botón
+        // Calculate button cell size
         int anchoCelda = botones[0][0].getWidth();
         int altoCelda = botones[0][0].getHeight();
         
-        // Obtener la posición actual del barco
+        // Get current ship position
         int barcoX = imagenBarco.getX();
         int barcoY = imagenBarco.getY();
         
-        // Calcular la celda más cercana (índices i, j en la matriz de botones)
+        // Calculate closest cell (indices i, j in button matrix)
         int i = Math.round((float)barcoY / altoCelda);
         int j = Math.round((float)barcoX / anchoCelda);
         
-        // Limitar los índices dentro del rango válido
+        // Limit indices to valid range
         i = Math.max(0, Math.min(15, i));
         j = Math.max(0, Math.min(15, j));
         
-        // Obtener las dimensiones en botones del barco
-        int xBarco = barco.getXBarco(); // Longitud horizontal en botones
-        int yBarco = barco.getYBarco(); // Longitud vertical en botones
-
-        if(!barco.seRedimensiono()){
-        barco.resizeBarcoABoton(anchoCelda, altoCelda);
+        // Get ship dimensions in buttons
+        int xBarco = barco.getXBarco(); // Horizontal length in buttons
+        int yBarco = barco.getYBarco(); // Vertical length in buttons
+    
+        if (!barco.seRedimensiono()) {
+            barco.resizeBarcoABoton(anchoCelda, altoCelda);
         }
         
-        // Asegurar que el barco no se salga del tablero
+        // Ensure ship doesn't go off the board
         if (j + xBarco > 16) {
             j = 16 - xBarco;
         }
@@ -143,35 +179,63 @@ public class TableroBShip {
             i = 16 - yBarco;
         }
         
-        // Establecer la nueva posición del barco alineada con la cuadrícula
-        imagenBarco.setLocation(j * anchoCelda, i * altoCelda);
+        // Check if the position is valid (no overlap)
+        if (posicionValida(i, j, xBarco, yBarco, barco.getTipo())) {
+            // Set new ship position aligned with grid
+            imagenBarco.setLocation(j * anchoCelda, i * altoCelda);
+            
+            // Register which buttons are occupied by this ship
+            registrarBotones(barco, i, j);
+        } else {
+            // Return to original position or previous valid position
+            // For now, just place in a safe starting position
+            imagenBarco.setLocation(100, 100 + barcos.indexOf(barco) * 70);
+        }
         
-        // También puedes registrar qué botones está ocupando este barco
-        registrarBotones(barco, i, j);
-        
-        // Actualizar la representación visual
+        // Update visual representation
         barcosPanel.repaint();
     }
     
-    // Método para registrar qué botones ocupa un barco
+    // Method to check if position is valid (no overlap)
+    private boolean posicionValida(int filaInicio, int columnaInicio, int ancho, int alto, int barcoID) {
+        for (int i = filaInicio; i < filaInicio + alto; i++) {
+            for (int j = columnaInicio; j < columnaInicio + ancho; j++) {
+                if (i >= 0 && i < 16 && j >= 0 && j < 16) {
+                    Object ocupado = botones[i][j].getClientProperty("ocupado");
+                    Object idBarco = botones[i][j].getClientProperty("barcoID");
+                    
+                    // Check if cell is occupied by another ship
+                    if (ocupado != null && (Boolean)ocupado && 
+                        (idBarco == null || (Integer)idBarco != barcoID)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    
     private void registrarBotones(BarcoBShip barco, int filaInicio, int columnaInicio) {
         int xBarco = barco.getXBarco();
         int yBarco = barco.getYBarco();
         
-        // Marcar los botones como ocupados
+        // Mark buttons as occupied
         for (int i = filaInicio; i < filaInicio + yBarco; i++) {
             for (int j = columnaInicio; j < columnaInicio + xBarco; j++) {
                 if (i >= 0 && i < 16 && j >= 0 && j < 16) {
-                    // Aquí puedes registrar que este botón está ocupado
-                    // Por ejemplo:
+                    // Set button properties
                     botones[i][j].setBackground(Color.DARK_GRAY);
-                    // O guardar una referencia al barco en alguna estructura de datos
+                    botones[i][j].putClientProperty("ocupado", true);
+                    botones[i][j].putClientProperty("barcoID", barco.getTipo());
+                    // You can add more properties like ship orientation, ship size, etc.
                 }
             }
         }
     }
 
+    
+
     public static void main(String[] args) {
-        new TableroBShip();
+        new TableroPosicionamientoBShip();
     }
 }
