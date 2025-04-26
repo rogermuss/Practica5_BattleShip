@@ -105,7 +105,7 @@ public class TableroPosicionamientoBShip {
                 }
             } 
         }
-        return contCuadros == 26;
+        return contCuadros == 26; //Cantidad de cuadros al colocar todos los barcos.
     }
 
     
