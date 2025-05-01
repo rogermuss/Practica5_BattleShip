@@ -1,3 +1,5 @@
+import java.util.concurrent.Semaphore;
+
 public class BattleShip {
 
     //El curso de juego estara dado por si el jugador acerto el disparo o fallo el mismo
@@ -21,6 +23,9 @@ public class BattleShip {
     private TableroPosicionamientoBShip tableroJ1;
     private TableroPosicionamientoBShip tableroCPU;
     private TableroPosicionamientoBShip tableroJ2;
+    private static Semaphore semaforo = new Semaphore(0); // Controla la pausa
+
+    
 
 
     public BattleShip(boolean modoDeJuego){
@@ -33,6 +38,14 @@ public class BattleShip {
         else{
             tableroJ1 = new TableroPosicionamientoBShip();
             tableroJ2 = new TableroPosicionamientoBShip();
+        }
+    }
+    
+    public static void esperarClick() {
+        try {
+            semaforo.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,6 +19,7 @@ public class TableroPosicionamientoBShip {
     private JLayeredPane layeredPane = new JLayeredPane();
     private JButton continuarButton = new JButton("ok");
     private ArrayList<BarcoBShip> barcos = new ArrayList<>();
+    private static Semaphore semaforo = new Semaphore(0); // Controla la pausa
     public final int MARGEN_FRAME_HEIGHT = 285;
     public final int MARGEN_FRAME_WIDTH = 420;
 
@@ -31,6 +33,7 @@ public class TableroPosicionamientoBShip {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1920,1080);
         frame.setLayout(new BorderLayout()); // Cambiado a BorderLayout
+        frame.setBackground(Color.DARK_GRAY);
 
 
         continuarButton.setBackground(Color.BLACK);
@@ -39,6 +42,7 @@ public class TableroPosicionamientoBShip {
         continuarButton.setBounds(1495,0, 50,1030);
 
         continuarButton.addActionListener(e -> {
+            
             if(estanBarcosPosicionados()){
                 layeredPane.remove(barcosPanel); // elimina el panel
                 layeredPane.revalidate();   // revalida el layout
@@ -117,19 +121,16 @@ public class TableroPosicionamientoBShip {
         }
     
         for(BarcoBShip barco : barcos) {
-            barco.hacerArrastrable(botones); // Pass the button grid
+            barco.hacerArrastrable(botones); 
             barco.girarAlRecibirClick(botones);
             
-            // Rest of the code...
         
             JLabel imagenBarco = barco.getLabelBarco();
-            
-            // Initial position 
+             
             imagenBarco.setBounds(100, 100 + barcos.indexOf(barco) * 70, 
                                 imagenBarco.getPreferredSize().width, 
                                 imagenBarco.getPreferredSize().height);
         
-            // Final reference for use in listener
             final BarcoBShip barcoFinal = barco;
             
             imagenBarco.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -147,31 +148,25 @@ public class TableroPosicionamientoBShip {
     //Alinear tambien cuando se desea girar el barco y ajustar el tamaño del barco segun se necesite para formar parte del boton
 
     private void alinearBarcoConCuadricula(JLabel imagenBarco, BarcoBShip barco) {
-        // Calculate button cell size
         int anchoCelda = botones[0][0].getWidth();
         int altoCelda = botones[0][0].getHeight();
         
-        // Get current ship position
         int barcoX = imagenBarco.getX();
         int barcoY = imagenBarco.getY();
         
-        // Calculate closest cell (indices i, j in button matrix)
         int i = Math.round((float)barcoY / altoCelda);
         int j = Math.round((float)barcoX / anchoCelda);
         
-        // Limit indices to valid range
         i = Math.max(0, Math.min(15, i));
         j = Math.max(0, Math.min(15, j));
         
-        // Get ship dimensions in buttons
-        int xBarco = barco.getXBarco(); // Horizontal length in buttons
-        int yBarco = barco.getYBarco(); // Vertical length in buttons
+        int xBarco = barco.getXBarco(); // Horizontal 
+        int yBarco = barco.getYBarco(); // Vertical 
     
         if (!barco.seRedimensiono()) {
             barco.resizeBarcoABoton(anchoCelda, altoCelda);
         }
         
-        // Ensure ship doesn't go off the board
         if (j + xBarco > 16) {
             j = 16 - xBarco;
         }
@@ -179,24 +174,18 @@ public class TableroPosicionamientoBShip {
             i = 16 - yBarco;
         }
         
-        // Check if the position is valid (no overlap)
         if (posicionValida(i, j, xBarco, yBarco, barco.getTipo())) {
-            // Set new ship position aligned with grid
             imagenBarco.setLocation(j * anchoCelda, i * altoCelda);
             
-            // Register which buttons are occupied by this ship
             registrarBotones(barco, i, j);
         } else {
-            // Return to original position or previous valid position
-            // For now, just place in a safe starting position
+            
             imagenBarco.setLocation(100, 100 + barcos.indexOf(barco) * 70);
         }
         
-        // Update visual representation
         barcosPanel.repaint();
     }
     
-    // Method to check if position is valid (no overlap)
     private boolean posicionValida(int filaInicio, int columnaInicio, int ancho, int alto, int barcoID) {
         for (int i = filaInicio; i < filaInicio + alto; i++) {
             for (int j = columnaInicio; j < columnaInicio + ancho; j++) {
@@ -204,7 +193,6 @@ public class TableroPosicionamientoBShip {
                     Object ocupado = botones[i][j].getClientProperty("ocupado");
                     Object idBarco = botones[i][j].getClientProperty("barcoID");
                     
-                    // Check if cell is occupied by another ship
                     if (ocupado != null && (Boolean)ocupado && 
                         (idBarco == null || (Integer)idBarco != barcoID)) {
                         return false;
@@ -219,15 +207,13 @@ public class TableroPosicionamientoBShip {
         int xBarco = barco.getXBarco();
         int yBarco = barco.getYBarco();
         
-        // Mark buttons as occupied
         for (int i = filaInicio; i < filaInicio + yBarco; i++) {
             for (int j = columnaInicio; j < columnaInicio + xBarco; j++) {
                 if (i >= 0 && i < 16 && j >= 0 && j < 16) {
-                    // Set button properties
+
                     botones[i][j].setBackground(Color.DARK_GRAY);
                     botones[i][j].putClientProperty("ocupado", true);
                     botones[i][j].putClientProperty("barcoID", barco.getTipo());
-                    // You can add more properties like ship orientation, ship size, etc.
                 }
             }
         }

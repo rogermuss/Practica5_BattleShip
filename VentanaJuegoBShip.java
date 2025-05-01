@@ -1,11 +1,16 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Random;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 public class VentanaJuegoBShip {
     private JFrame frame = new JFrame("Version 1.0");
@@ -15,8 +20,17 @@ public class VentanaJuegoBShip {
     private JButton[][] puntosDeTiroCPU = new JButton[FILAS][COLUMNAS];
     private JPanel panelCPU = new JPanel();
     private JPanel panelJugador = new JPanel();
+    private JPanel panelTablero = new JPanel();
+    private JPanel panelCentral = new JPanel();
+    private JLabel labelJugador = new JLabel();
+    private JLabel labelCPU = new JLabel();
+    private JLabel labelTurno = new JLabel();
     private final int VERTICAL = 1;
     private final int HORIZONTAL = 0;
+    private ArrayList<Integer> direccionesDeBusqueda = new ArrayList<>();
+    private boolean barcoEncontrado = false;
+    private int filaActual;
+    private int columnaActual;
     public static final int UP = 1;
     public static final int LEFT = 0;
     public static final int DOWN = 3;
@@ -34,22 +48,92 @@ public class VentanaJuegoBShip {
 
         panelJugador.setLayout(new GridLayout(16,16));
         panelJugador.setBackground(Color.CYAN);
-
+        panelJugador.setBounds(0, 0, frame.getWidth()/2-MARGEN_FRAME_WIDTH, frame.getHeight()/2-MARGEN_FRAME_HEIGHT-100);
 
         panelCPU.setLayout(new GridLayout(16,16));
         panelCPU.setBackground(Color.CYAN);
-        panelCPU.setBounds(0, 0, frame.getWidth()-MARGEN_FRAME_WIDTH, frame.getHeight()-MARGEN_FRAME_HEIGHT);
+        panelCPU.setBounds(0, 0, frame.getWidth()/2-MARGEN_FRAME_WIDTH, frame.getHeight()/2-MARGEN_FRAME_HEIGHT-100);
 
+
+        //Aplicar diseño del panel central, junto con mensajes de actualizacion de ronda.
+
+        panelCentral.setLayout(new GridLayout(3, 1)); // Un label arriba y otro abajo
+        panelCentral.setBackground(Color.BLACK);
+
+        // Cargar la imagen original
+        ImageIcon iconoFlechaDerecha = new ImageIcon("FlechaDerecha.png");
+
+        // Redimensionar la imagen
+        Image imagenFlechaDerecha = iconoFlechaDerecha.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+
+        // Crear un nuevo icono a partir de la imagen redimensionada
+        iconoFlechaDerecha = new ImageIcon(imagenFlechaDerecha);
+
+        // Cargar la imagen original
+        ImageIcon iconoFlechaIzquierda = new ImageIcon("FlechaIzquierda.png");
+
+        // Redimensionar la imagen
+        Image imagenFlechaIzquierda = iconoFlechaIzquierda.getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+
+        // Crear un nuevo icono a partir de la imagen redimensionada
+        iconoFlechaIzquierda = new ImageIcon(imagenFlechaIzquierda);
+
+
+        labelJugador.setText("JUGADOR");
+        labelJugador.setForeground(Color.WHITE);
+        labelJugador.setIcon(iconoFlechaDerecha);
+        labelJugador.setHorizontalTextPosition(SwingConstants.LEFT);
+        labelJugador.setHorizontalAlignment(SwingConstants.CENTER); // Centramos
+        labelJugador.setVerticalAlignment(SwingConstants.CENTER);
+        labelJugador.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
+
+        labelCPU.setText("CPU");
+        labelCPU.setForeground(Color.WHITE);
+        labelCPU.setIcon(iconoFlechaIzquierda);
+        labelCPU.setHorizontalTextPosition(SwingConstants.RIGHT);
+        labelCPU.setHorizontalAlignment(SwingConstants.CENTER);
+        labelCPU.setVerticalAlignment(SwingConstants.CENTER);
+        labelCPU.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
+
+
+        labelTurno.setText("Turno: JUGADOR");
+        labelTurno.setForeground(Color.MAGENTA);
+        labelTurno.setHorizontalAlignment(SwingConstants.CENTER);
+        labelTurno.setHorizontalAlignment(SwingConstants.CENTER);
+        labelTurno.setFont(new Font("Comic Sans MS", Font.PLAIN, 20));
+
+
+        panelCentral.add(labelJugador);
+        panelCentral.add(labelCPU);
+        panelCentral.add(labelTurno);
+
+        // No pongas setBounds en BorderLayout, se ajusta solo
+
+
+        panelTablero.setLayout(new BorderLayout());
+        panelTablero.setBounds(0,0, frame.getWidth()-MARGEN_FRAME_WIDTH, frame.getHeight()-MARGEN_FRAME_HEIGHT); // o el tamaño que desees
+        panelTablero.setLayout(new BorderLayout());
+        panelTablero.setBackground(Color.DARK_GRAY);
+
+
+        
         llenarTableroCPU();
 
         for(int i=0; i<16;i++){
             for(int j=0; j<16;j++){
+                this.puntosDeTiroJugador[i][j].setEnabled(false);
+                this.puntosDeTiroJugador[i][j].setFocusable(false);
+                this.puntosDeTiroJugador[i][j].putClientProperty("SeDisparo", false);
                 panelJugador.add(this.puntosDeTiroJugador[i][j]);
                 panelCPU.add(puntosDeTiroCPU[i][j]);
             } 
         }
 
-        frame.add(panelCPU);
+        panelTablero.add(panelJugador, BorderLayout.EAST);
+        panelTablero.add(panelCPU, BorderLayout.WEST );
+        panelTablero.add(panelCentral, BorderLayout.CENTER);
+
+        frame.add(panelTablero);
         frame.setVisible(true);
         
 
@@ -57,12 +141,15 @@ public class VentanaJuegoBShip {
 
     }
 
+    
+
     public void llenarTableroCPU(){
         for(int i=0; i<16;i++){
             for(int j=0; j<16;j++){
                 puntosDeTiroCPU[i][j] = new JButton();
                 puntosDeTiroCPU[i][j].setBackground(Color.CYAN);
                 puntosDeTiroCPU[i][j].putClientProperty("ocupado", false); // Initialize as false
+                puntosDeTiroCPU[i][j].putClientProperty("SeDisparo", false);
                 panelCPU.add(puntosDeTiroCPU[i][j]);
             } 
         }
@@ -260,11 +347,73 @@ public class VentanaJuegoBShip {
         }while((boolean)ocupado || !puedeColocar);
     }
 
-    public static void main(String[] args) {
+    public void tiroProgramadoCPU(){
+        Random rdm = new Random();
+        if(!barcoEncontrado){
+            filaActual = rdm.nextInt(16);
+            columnaActual = rdm.nextInt(16);
+            if(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual][columnaActual].getClientProperty("Ocupado"))){
+                //Agregar funcion para oscurecer el boton y/o cambiarlo de color, asi como la de dormir la CPU 2 segundos.
+                puntosDeTiroCPU[filaActual][columnaActual].putClientProperty("SeDisparo", true);
+                barcoEncontrado = true;
+                //Son UP, DOWN, LEFT y RIGHT.
+                for (int i = 0; i <= 3; i++) {
+                    direccionesDeBusqueda.add(i);
+                }
+                tiroProgramadoCPU();
+            }
+            //Agregar funcion para oscurecer el boton y/o cambiarlo de color, asi como la de dormir la CPU 2 segundos.
+            puntosDeTiroCPU[filaActual][columnaActual].putClientProperty("SeDisparo", true);
+        }
+        else{
+
+            do { 
+                int acumDireccion = 1;
+                int index = rdm.nextInt(direccionesDeBusqueda.size());
+                int direccionSeleccionada = direccionesDeBusqueda.get(index);
+                switch (direccionSeleccionada) {
+                    case UP -> {
+                        if(filaActual+acumDireccion >= 0){
+                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual-acumDireccion][columnaActual].getClientProperty("Ocupado"))){
+                                puntosDeTiroCPU[filaActual-acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
+                                acumDireccion++;
+                            }
+                        }
+                    }
+                    case DOWN -> {
+                        if(filaActual+acumDireccion <= 15){
+                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].getClientProperty("Ocupado"))){
+                                puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
+                                acumDireccion++;
+                            }
+                        }
+                    }
+                    case LEFT -> {
+                        if(filaActual+acumDireccion >= 0){
+                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual][columnaActual-acumDireccion].getClientProperty("Ocupado"))){
+                                puntosDeTiroCPU[filaActual][columnaActual-acumDireccion].putClientProperty("SeDisparo", true);
+                                acumDireccion++;
+                            }
+                        }
+                    }
+                    case RIGHT -> {
+                        if(filaActual+acumDireccion <= 15){
+                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].getClientProperty("Ocupado"))){
+                                puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
+                                acumDireccion++;
+                            }
+                        }
+                    }
+                }
+            } while (true);
+        }
+
     }
 
     
 
+    public void cambiarTurno(){
 
+    }
 
 }
