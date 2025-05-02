@@ -86,7 +86,6 @@ public class MenuBShip {
             JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs CPU");
             ventanaMenu.setVisible(false);
             juegoBattleShip = new BattleShip(BattleShip.MODO_CPU);
-            ventanaMenu.setVisible(true);
         });
     }
 
@@ -106,7 +105,6 @@ public class MenuBShip {
             JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs Jugador");
             ventanaMenu.setVisible(false);
             juegoBattleShip = new BattleShip(BattleShip.MODO_VS);
-            ventanaMenu.setVisible(true);        
         });
     }
     public void opcionSalir(){

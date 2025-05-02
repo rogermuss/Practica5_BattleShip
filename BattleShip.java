@@ -31,13 +31,11 @@ public class BattleShip {
     public BattleShip(boolean modoDeJuego){
         //Modo contra CPU
         if(modoDeJuego){
-            tableroCPU = new TableroPosicionamientoBShip();
-            tableroJ1 = new TableroPosicionamientoBShip();
+            new TableroPosicionamientoBShip();
         }
         //Modo contra otro jugador
         else{
-            tableroJ1 = new TableroPosicionamientoBShip();
-            tableroJ2 = new TableroPosicionamientoBShip();
+            //No lo hice jiji
         }
     }
     

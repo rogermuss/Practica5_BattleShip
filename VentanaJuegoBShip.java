@@ -4,13 +4,17 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 
 public class VentanaJuegoBShip {
     private JFrame frame = new JFrame("Version 1.0");
@@ -25,12 +29,16 @@ public class VentanaJuegoBShip {
     private JLabel labelJugador = new JLabel();
     private JLabel labelCPU = new JLabel();
     private JLabel labelTurno = new JLabel();
+    private Semaphore semaforo = new Semaphore(0);
     private final int VERTICAL = 1;
     private final int HORIZONTAL = 0;
     private ArrayList<Integer> direccionesDeBusqueda = new ArrayList<>();
     private boolean barcoEncontrado = false;
+    private boolean turno = false;
     private int filaActual;
     private int columnaActual;
+    public static final boolean TURNO_CPU = true;
+    public static final boolean TURNO_JUGADOR = false;
     public static final int UP = 1;
     public static final int LEFT = 0;
     public static final int DOWN = 3;
@@ -38,6 +46,7 @@ public class VentanaJuegoBShip {
     public final int MARGEN_FRAME_HEIGHT = 285;
     public final int MARGEN_FRAME_WIDTH = 420;
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public VentanaJuegoBShip(JButton[][] puntosDeTiroJugador) {
         this.puntosDeTiroJugador = puntosDeTiroJugador;
 
@@ -129,17 +138,19 @@ public class VentanaJuegoBShip {
             } 
         }
 
+        tiroJugador();
+
         panelTablero.add(panelJugador, BorderLayout.EAST);
         panelTablero.add(panelCPU, BorderLayout.WEST );
         panelTablero.add(panelCentral, BorderLayout.CENTER);
 
         frame.add(panelTablero);
         frame.setVisible(true);
-        
-
 
 
     }
+
+    //Agregar flujo con metodos creados.
 
     
 
@@ -171,19 +182,15 @@ public class VentanaJuegoBShip {
                 for (int j = 0; j <= 2; j++) {
                     if(columna+j > 15 && fila+i > 15){
                         puntosDeTiroCPU[fila-i][columna-j].putClientProperty("ocupado", true);  
-                        puntosDeTiroCPU[fila-i][columna-j].setBackground(Color.GRAY);                  
                     }
                     else if(fila+i > 15){
                         puntosDeTiroCPU[fila-i][columna+j].putClientProperty("ocupado", true); 
-                        puntosDeTiroCPU[fila-i][columna+j].setBackground(Color.GRAY);                   
                     }
                     else if(columna+j > 15){
                         puntosDeTiroCPU[fila+i][columna-j].putClientProperty("ocupado", true);  
-                        puntosDeTiroCPU[fila+i][columna-j].setBackground(Color.GRAY);                  
                     }
                     else{
                         puntosDeTiroCPU[fila+i][columna+j].putClientProperty("ocupado", true);
-                        puntosDeTiroCPU[fila+i][columna+j].setBackground(Color.GRAY);
                     }
                 }
             }
@@ -193,22 +200,18 @@ public class VentanaJuegoBShip {
                 for (int j = 0; j <= 1; j++) {
                     if(columna+j > 15 && fila+i > 15){
                         puntosDeTiroCPU[fila-i][columna-j].putClientProperty("ocupado", true);      
-                        puntosDeTiroCPU[fila-i][columna-j].setBackground(Color.GRAY);                  
               
                     }
                     else if(fila+i > 15){
                         puntosDeTiroCPU[fila-i][columna+j].putClientProperty("ocupado", true); 
-                        puntosDeTiroCPU[fila-i][columna+j].setBackground(Color.GRAY);                  
                    
                     }
                     else if(columna+j > 15){
                         puntosDeTiroCPU[fila+i][columna-j].putClientProperty("ocupado", true); 
-                        puntosDeTiroCPU[fila+i][columna-j].setBackground(Color.GRAY);                  
                    
                     }
                     else{
                         puntosDeTiroCPU[fila+i][columna+j].putClientProperty("ocupado", true);
-                        puntosDeTiroCPU[fila+i][columna+j].setBackground(Color.GRAY);                  
 
                     }
                 }
@@ -320,24 +323,20 @@ public class VentanaJuegoBShip {
                     switch (colocacionSeleccionada) {
                         case UP -> {
                             puntosDeTiroCPU[fila-i][columna].putClientProperty("ocupado", true);
-                            puntosDeTiroCPU[fila-i][columna].setBackground(Color.GRAY);
 
                         }
                         case DOWN -> {
                             puntosDeTiroCPU[fila+i][columna].putClientProperty("ocupado", true);
-                            puntosDeTiroCPU[fila+i][columna].setBackground(Color.GRAY);
 
 
                         }
                         case RIGHT -> {
                             puntosDeTiroCPU[fila][columna+i].putClientProperty("ocupado", true);
-                            puntosDeTiroCPU[fila][columna+i].setBackground(Color.GRAY);
 
 
                         }
                         case LEFT -> {
                             puntosDeTiroCPU[fila][columna-i].putClientProperty("ocupado", true);
-                            puntosDeTiroCPU[fila][columna-i].setBackground(Color.GRAY);
 
                         }
                     }
@@ -347,73 +346,223 @@ public class VentanaJuegoBShip {
         }while((boolean)ocupado || !puedeColocar);
     }
 
+    public void tiroJugador(){
+        for (int i = 0; i<=15; i++) {
+            for (int j = 0; j<=15; j++) {
+                final int fila = i;
+                final int columna = j;
+                puntosDeTiroCPU[i][j].addActionListener(e ->{
+                    if(turno == TURNO_JUGADOR){
+                        if(Boolean.TRUE.equals(puntosDeTiroCPU[fila][columna].getClientProperty("ocupado"))){
+                            puntosDeTiroCPU[fila][columna].setBackground(Color.RED);
+                            puntosDeTiroCPU[fila][columna].setEnabled(false);
+                            puntosDeTiroCPU[fila][columna].setFocusable(false);
+                            puntosDeTiroCPU[fila][columna].putClientProperty("SeDisparo", true);
+                            verificarVictoria();
+                        }
+                        else{
+                            puntosDeTiroCPU[fila][columna].setBackground(Color.BLUE);
+                            puntosDeTiroCPU[fila][columna].setEnabled(false);
+                            puntosDeTiroCPU[fila][columna].setFocusable(false);
+                            puntosDeTiroCPU[fila][columna].putClientProperty("SeDisparo", true);
+                            for (int x = 0; x < 16; x++) {
+                                for (int y = 0; y < 16; y++) {
+                                    puntosDeTiroCPU[x][y].setEnabled(false);
+                                }
+                            }
+                            
+                            cambiarTurno();
+                            Timer delayCPU = new Timer(1000, evt -> {
+                                tiroProgramadoCPU(); // ahora la CPU comienza su turno
+                            });
+                            delayCPU.setRepeats(false);
+                            delayCPU.start();                        }
+                    }
+                    });
+            }
+        }
+    }
+
+    public void efectoDispararCPU(int fila,int columna) {
+        
+            if(Boolean.TRUE.equals(puntosDeTiroJugador[fila][columna].getClientProperty("ocupado"))){
+                puntosDeTiroJugador[fila][columna].setBackground(Color.RED);
+            }
+            else{
+                puntosDeTiroJugador[fila][columna].setBackground(Color.BLUE);
+            }
+            puntosDeTiroJugador[fila][columna].setEnabled(false);
+            puntosDeTiroJugador[fila][columna].setFocusable(false);
+            puntosDeTiroJugador[fila][columna].putClientProperty("SeDisparo", true);
+    }
+
+
+
     public void tiroProgramadoCPU(){
         Random rdm = new Random();
         if(!barcoEncontrado){
-            filaActual = rdm.nextInt(16);
-            columnaActual = rdm.nextInt(16);
-            if(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual][columnaActual].getClientProperty("Ocupado"))){
+
+            do{
+                filaActual = rdm.nextInt(16);
+                columnaActual = rdm.nextInt(16);
+            }while(Boolean.TRUE.equals(puntosDeTiroJugador[filaActual][columnaActual].getClientProperty("SeDisparo")));
+
+            if(Boolean.TRUE.equals(puntosDeTiroJugador[filaActual][columnaActual].getClientProperty("ocupado"))){
                 //Agregar funcion para oscurecer el boton y/o cambiarlo de color, asi como la de dormir la CPU 2 segundos.
-                puntosDeTiroCPU[filaActual][columnaActual].putClientProperty("SeDisparo", true);
-                barcoEncontrado = true;
+                puntosDeTiroJugador[filaActual][columnaActual].putClientProperty("SeDisparo", true);
                 //Son UP, DOWN, LEFT y RIGHT.
                 for (int i = 0; i <= 3; i++) {
                     direccionesDeBusqueda.add(i);
                 }
-                tiroProgramadoCPU();
+                barcoEncontrado = true;
+                efectoDispararCPU(filaActual, columnaActual);
+                verificarVictoria();
             }
-            //Agregar funcion para oscurecer el boton y/o cambiarlo de color, asi como la de dormir la CPU 2 segundos.
-            puntosDeTiroCPU[filaActual][columnaActual].putClientProperty("SeDisparo", true);
+            else{
+                puntosDeTiroJugador[filaActual][columnaActual].putClientProperty("SeDisparo", true);
+                efectoDispararCPU(filaActual, columnaActual);
+                cambiarTurno();
+            }
         }
-        else{
-
-            do { 
+        if(barcoEncontrado){
                 int acumDireccion = 1;
-                int index = rdm.nextInt(direccionesDeBusqueda.size());
-                int direccionSeleccionada = direccionesDeBusqueda.get(index);
-                switch (direccionSeleccionada) {
-                    case UP -> {
-                        if(filaActual+acumDireccion >= 0){
-                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual-acumDireccion][columnaActual].getClientProperty("Ocupado"))){
-                                puntosDeTiroCPU[filaActual-acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
-                                acumDireccion++;
-                            }
+                if(!direccionesDeBusqueda.isEmpty()){
+                    int index = rdm.nextInt(direccionesDeBusqueda.size());
+                    int direccionSeleccionada = direccionesDeBusqueda.get(index);
+                    direccionesDeBusqueda.remove(index);
+                
+                    switch (direccionSeleccionada) {
+                        case UP -> {
+                            while (filaActual - acumDireccion >= 0 &&
+                                Boolean.TRUE.equals(puntosDeTiroJugador[filaActual - acumDireccion][columnaActual].getClientProperty("ocupado")) &&
+                                Boolean.FALSE.equals(puntosDeTiroJugador[filaActual - acumDireccion][columnaActual].getClientProperty("SeDisparo"))) {
+                                    puntosDeTiroJugador[filaActual-acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
+                                    efectoDispararCPU(filaActual-acumDireccion, columnaActual);
+                                    acumDireccion++;
+                                    verificarVictoria();
+                                }
+                            break;
+                        }
+                        case DOWN -> {
+                            while (filaActual + acumDireccion <= 15 &&
+                                Boolean.TRUE.equals(puntosDeTiroJugador[filaActual + acumDireccion][columnaActual].getClientProperty("ocupado")) &&
+                                Boolean.FALSE.equals(puntosDeTiroJugador[filaActual + acumDireccion][columnaActual].getClientProperty("SeDisparo"))) {
+                                    puntosDeTiroJugador[filaActual+acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
+                                    efectoDispararCPU(filaActual+acumDireccion, columnaActual);
+                                    acumDireccion++;
+                                    verificarVictoria();
+                                }
+                            
+                            break;
+                        }
+                        case LEFT -> {
+                            while (columnaActual - acumDireccion >= 0 &&
+                                Boolean.TRUE.equals(puntosDeTiroJugador[filaActual][columnaActual - acumDireccion].getClientProperty("ocupado")) &&
+                                Boolean.FALSE.equals(puntosDeTiroJugador[filaActual][columnaActual - acumDireccion].getClientProperty("SeDisparo"))) {
+                                    puntosDeTiroJugador[filaActual][columnaActual-acumDireccion].putClientProperty("SeDisparo", true);
+                                    efectoDispararCPU(filaActual, columnaActual-acumDireccion);
+                                    acumDireccion++;
+                                    verificarVictoria();
+                                }
+                            
+                            break;
+                        }
+                        case RIGHT -> {
+                            while (columnaActual + acumDireccion <= 15 &&
+                                Boolean.TRUE.equals(puntosDeTiroJugador[filaActual][columnaActual + acumDireccion].getClientProperty("ocupado")) &&
+                                Boolean.FALSE.equals(puntosDeTiroJugador[filaActual][columnaActual + acumDireccion].getClientProperty("SeDisparo"))) {
+                                    puntosDeTiroJugador[filaActual][columnaActual+acumDireccion].putClientProperty("SeDisparo", true);
+                                    efectoDispararCPU(filaActual, columnaActual+acumDireccion);
+                                    acumDireccion++;
+                                    verificarVictoria();
+                                }
+                            
+                            break;
                         }
                     }
-                    case DOWN -> {
-                        if(filaActual+acumDireccion <= 15){
-                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].getClientProperty("Ocupado"))){
-                                puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
-                                acumDireccion++;
-                            }
-                        }
-                    }
-                    case LEFT -> {
-                        if(filaActual+acumDireccion >= 0){
-                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual][columnaActual-acumDireccion].getClientProperty("Ocupado"))){
-                                puntosDeTiroCPU[filaActual][columnaActual-acumDireccion].putClientProperty("SeDisparo", true);
-                                acumDireccion++;
-                            }
-                        }
-                    }
-                    case RIGHT -> {
-                        if(filaActual+acumDireccion <= 15){
-                            while(Boolean.TRUE.equals(puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].getClientProperty("Ocupado"))){
-                                puntosDeTiroCPU[filaActual+acumDireccion][columnaActual].putClientProperty("SeDisparo", true);
-                                acumDireccion++;
-                            }
-                        }
-                    }
+                    tiroAleatorioProgramado();
+                    cambiarTurno();
                 }
-            } while (true);
+                else{
+                    barcoEncontrado = false;
+                    tiroAleatorioProgramado();
+                    cambiarTurno();
+                }
         }
 
+    }
+
+    public void tiroAleatorioProgramado(){
+        Random rdm = new Random();
+        List<int[]> tirosVaciosDisponibles = new ArrayList<>();
+
+        for (int i = 0; i<=15; i++) {
+            for (int j = 0; j<=15; j++) {
+                if(Boolean.FALSE.equals(puntosDeTiroJugador[i][j].getClientProperty("ocupado")) 
+                && Boolean.FALSE.equals(puntosDeTiroJugador[i][j].getClientProperty("SeDisparo"))){
+                    tirosVaciosDisponibles.add(new int[]{i, j});
+                }
+            }
+        }
+        if (!tirosVaciosDisponibles.isEmpty()) {
+            int[] coordenadaAleatoria = tirosVaciosDisponibles.get(rdm.nextInt(tirosVaciosDisponibles.size()));
+            int filavaciaAleatoria = coordenadaAleatoria[0]; //Posicion de la filas
+            int columnaVaciaAleatoria = coordenadaAleatoria[1]; //Posicion de las columnas
+            puntosDeTiroJugador[filavaciaAleatoria][columnaVaciaAleatoria].putClientProperty("SeDisparo", true);
+            efectoDispararCPU(filavaciaAleatoria, columnaVaciaAleatoria);
+        }
+    }
+
+    public void verificarVictoria(){
+        int contadorVictoriaCPU = 0;
+        int contadorVictoriaJugador = 0;
+        for (int i = 0; i<=15; i++) {
+            for (int j = 0; j<=15; j++) {
+                if (Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("ocupado")) 
+                && Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("SeDisparo"))) {
+                    contadorVictoriaJugador++;
+                }
+                if (Boolean.TRUE.equals(puntosDeTiroJugador[i][j].getClientProperty("ocupado")) 
+                && Boolean.TRUE.equals(puntosDeTiroJugador[i][j].getClientProperty("SeDisparo"))) {
+                    contadorVictoriaCPU++;
+                }
+            }
+        }
+        if(contadorVictoriaCPU == 26){
+            //Accion para acabar el juego y mostrar una check box con un mensaje de victoria.
+            JOptionPane.showMessageDialog(frame, "Ha ganado la CPU!!");
+            frame.setVisible(false);
+            new MenuBShip();
+        }
+        if(contadorVictoriaJugador == 26){
+            JOptionPane.showMessageDialog(frame, "Ha ganado el JUGADOR!!");
+            frame.setVisible(false);
+            new MenuBShip();
+            //Accion para acabar el juego y mostrar una check box con un mensaje de victoria.
+        }
     }
 
     
 
     public void cambiarTurno(){
+        turno = !(turno);
+        if(turno == TURNO_JUGADOR){
+            labelTurno.setText("Turno: JUGADOR");
+            labelTurno.setForeground(Color.MAGENTA);
+            // 🔓 Reactiva los botones del CPU para que el jugador pueda disparar
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 16; j++) {
+                    if (!(Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("SeDisparo")))) {
+                        puntosDeTiroCPU[i][j].setEnabled(true);
+                    }
+                }
+            }
 
+        }
+        else{
+            labelTurno.setText("Turno: CPU");
+            labelTurno.setForeground(Color.orange);
+        }
     }
 
 }

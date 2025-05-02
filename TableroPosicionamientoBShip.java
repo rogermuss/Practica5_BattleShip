@@ -8,6 +8,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 public class TableroPosicionamientoBShip {
@@ -48,6 +49,7 @@ public class TableroPosicionamientoBShip {
                 layeredPane.revalidate();   // revalida el layout
                 layeredPane.repaint();      // repinta la interfaz
 
+                JOptionPane.showMessageDialog(frame, "Se colocaron correctamente los barcos :)");
                 frame.setVisible(false);
             
                 VentanaJuegoBShip ventanaJuego = new VentanaJuegoBShip(botones);
@@ -96,6 +98,7 @@ public class TableroPosicionamientoBShip {
 
 
     }
+
 
 
 
