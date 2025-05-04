@@ -1,6 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Image;
+import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -29,16 +30,18 @@ public class MenuBShip {
     private BattleShip juegoBattleShip;
 
 
+    // Constructor principal que configura y muestra la ventana del menú inicial.
+    // Establece el tamaño, fondo, logo, botones de selección de modo de juego y acciones correspondientes.
     public MenuBShip() {
          // Agregar las opciones al menú
          ventanaMenu.setSize(XSIZE, YSIZE);
          ventanaMenu.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          ventanaMenu.setLayout(new BorderLayout()); 
-         ventanaMenu.getContentPane().setBackground(new Color(0x000000)); // <- Color del fondo de la ventana
+         ventanaMenu.getContentPane().setBackground(new Color(0x000000)); 
 
         //Se busca y coloca la imagen como logo del menu
         ImageIcon imagenCentral = buscarImagenMenu();
-        Image img = imagenCentral.getImage().getScaledInstance(900, 500, Image.SCALE_SMOOTH); // Ajusta el tamaño
+        Image img = imagenCentral.getImage().getScaledInstance(900, 500, Image.SCALE_SMOOTH); 
         ImageIcon imagenRedimensionada = new ImageIcon(img);
         JLabel etiquetaImagen = new JLabel(imagenRedimensionada); 
 
@@ -59,7 +62,6 @@ public class MenuBShip {
     opcionSalir.setForeground(Color.WHITE);
     opcionSalir.setFocusPainted(false);
     
-    // Para que los colores se muestren correctamente en algunos Look & Feel
     opcionVsCPU.setOpaque(true);
     opcionVsJugador.setOpaque(true);
     opcionSalir.setOpaque(true);
@@ -70,25 +72,44 @@ public class MenuBShip {
         panelInferior.add(opcionVsJugador);
         panelInferior.add(opcionSalir);
 
-        //Se agregan los ActionListener
         opcionSalir();
         opcionVsCPU();
 
         ventanaMenu.add(panelInferior, BorderLayout.SOUTH);
         ventanaMenu.add(etiquetaImagen, BorderLayout.NORTH);
-         // Mostrar la ventana
+
         ventanaMenu.setVisible(true);
     }
 
     //Se genera el juego y al terminar regresa al menu del juego.
     public void opcionVsCPU(){
          opcionVsCPU.addActionListener(e -> {
-            JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs CPU");
-            ventanaMenu.setVisible(false);
-            juegoBattleShip = new BattleShip(BattleShip.MODO_CPU);
+            File f = new File("partida.dat");
+            if(f.exists()){
+                JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs CPU (Cargando partida guardada.)");
+                ventanaMenu.setVisible(false);
+                JButton[][] botonesJugador = new JButton[16][16];
+                for (int i = 0; i < 16; i++) {
+                    for (int j = 0; j < 16; j++) {
+                        botonesJugador[i][j] = new JButton();
+                        botonesJugador[i][j].setBackground(Color.CYAN);
+                        botonesJugador[i][j].putClientProperty("ocupado", false);
+                        botonesJugador[i][j].putClientProperty("SeDisparo", false);
+                    }
+                }
+
+                VentanaJuegoBShip ventana = new VentanaJuegoBShip(botonesJugador);
+                
+            }
+            else{
+                JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs CPU");
+                ventanaMenu.setVisible(false);
+                juegoBattleShip = new BattleShip(BattleShip.MODO_CPU);
+            }
         });
     }
 
+    //Busca la imagen de el menu en la carpeta
     public ImageIcon buscarImagenMenu(){
         String rutaImagen = "pngBattleship/MenuBattleship.jpg"; 
         java.net.URL imgURL = getClass().getResource(rutaImagen);
@@ -100,6 +121,7 @@ public class MenuBShip {
         }
     }
 
+    //Sin uso actual
     public void opcionVsJugador(){
         opcionVsJugador.addActionListener(e -> {
             JOptionPane.showMessageDialog(ventanaMenu, "Iniciar Jugador vs Jugador");
@@ -107,6 +129,8 @@ public class MenuBShip {
             juegoBattleShip = new BattleShip(BattleShip.MODO_VS);
         });
     }
+
+    //Sale del menu y termina el programa, dando la opcion de aceptar o cancelar
     public void opcionSalir(){
         opcionSalir.addActionListener(e -> {
             int confirmacion = JOptionPane.showConfirmDialog(ventanaMenu, "¿Seguro que quieres salir?", "Salir", JOptionPane.YES_NO_OPTION);
@@ -116,6 +140,7 @@ public class MenuBShip {
         });
     }
 
+    //Genera el menu de juego
     public static void main(String[] args) {
         new MenuBShip();
     }

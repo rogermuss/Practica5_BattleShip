@@ -3,10 +3,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Semaphore;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -17,7 +19,7 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 public class VentanaJuegoBShip {
-    private JFrame frame = new JFrame("Version 1.0");
+    private JFrame frame = new JFrame("Batalla Naval - v1.0");
     private final int FILAS = 16;
     private final int COLUMNAS = 16;
     private JButton[][] puntosDeTiroJugador = new JButton[FILAS][COLUMNAS]; 
@@ -29,7 +31,8 @@ public class VentanaJuegoBShip {
     private JLabel labelJugador = new JLabel();
     private JLabel labelCPU = new JLabel();
     private JLabel labelTurno = new JLabel();
-    private Semaphore semaforo = new Semaphore(0);
+    private ArchivoJuegoBShip archivo;
+    private final String RUTA_GUARDADO = "partida.dat";
     private final int VERTICAL = 1;
     private final int HORIZONTAL = 0;
     private ArrayList<Integer> direccionesDeBusqueda = new ArrayList<>();
@@ -46,27 +49,51 @@ public class VentanaJuegoBShip {
     public final int MARGEN_FRAME_HEIGHT = 285;
     public final int MARGEN_FRAME_WIDTH = 420;
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
     public VentanaJuegoBShip(JButton[][] puntosDeTiroJugador) {
         this.puntosDeTiroJugador = puntosDeTiroJugador;
-
-
-        frame.setSize(1920,1080);
+        archivo = new ArchivoJuegoBShip(RUTA_GUARDADO);
+        
+        inicializarInterfaz();
+        
+        // Intentar cargar partida guardada
+        if (archivo.existePartidaGuardada()) {
+            EstadoPartidaBShip estado = archivo.cargar();
+            if (estado != null) {
+                cargarEstado(estado);
+                JOptionPane.showMessageDialog(frame, "Partida cargada correctamente", "Carga de partida", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                // Si hay error al cargar, iniciar nueva partida
+                iniciarNuevaPartida();
+            }
+        } else {
+            // No hay partida guardada, iniciar nueva
+            iniciarNuevaPartida();
+        }
+        
+        // Agregar listener para guardar al cerrar la ventana
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                guardarPartida();
+            }
+        });
+    }
+    
+    private void inicializarInterfaz() {
+        frame.setSize(1920, 1080);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout()); // Distribución en forma de matriz
+        frame.setLayout(new BorderLayout());
 
-        panelJugador.setLayout(new GridLayout(16,16));
+        panelJugador.setLayout(new GridLayout(16, 16));
         panelJugador.setBackground(Color.CYAN);
         panelJugador.setBounds(0, 0, frame.getWidth()/2-MARGEN_FRAME_WIDTH, frame.getHeight()/2-MARGEN_FRAME_HEIGHT-100);
 
-        panelCPU.setLayout(new GridLayout(16,16));
+        panelCPU.setLayout(new GridLayout(16, 16));
         panelCPU.setBackground(Color.CYAN);
         panelCPU.setBounds(0, 0, frame.getWidth()/2-MARGEN_FRAME_WIDTH, frame.getHeight()/2-MARGEN_FRAME_HEIGHT-100);
 
-
-        //Aplicar diseño del panel central, junto con mensajes de actualizacion de ronda.
-
-        panelCentral.setLayout(new GridLayout(3, 1)); // Un label arriba y otro abajo
+        // Panel central con información del juego
+        panelCentral.setLayout(new GridLayout(3, 1));
         panelCentral.setBackground(Color.BLACK);
 
         // Cargar la imagen original
@@ -87,12 +114,12 @@ public class VentanaJuegoBShip {
         // Crear un nuevo icono a partir de la imagen redimensionada
         iconoFlechaIzquierda = new ImageIcon(imagenFlechaIzquierda);
 
-
+        // Configurar etiquetas
         labelJugador.setText("JUGADOR");
         labelJugador.setForeground(Color.WHITE);
         labelJugador.setIcon(iconoFlechaDerecha);
         labelJugador.setHorizontalTextPosition(SwingConstants.LEFT);
-        labelJugador.setHorizontalAlignment(SwingConstants.CENTER); // Centramos
+        labelJugador.setHorizontalAlignment(SwingConstants.CENTER);
         labelJugador.setVerticalAlignment(SwingConstants.CENTER);
         labelJugador.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
 
@@ -104,68 +131,194 @@ public class VentanaJuegoBShip {
         labelCPU.setVerticalAlignment(SwingConstants.CENTER);
         labelCPU.setFont(new Font("Comic Sans MS", Font.PLAIN, 16));
 
-
         labelTurno.setText("Turno: JUGADOR");
         labelTurno.setForeground(Color.MAGENTA);
         labelTurno.setHorizontalAlignment(SwingConstants.CENTER);
-        labelTurno.setHorizontalAlignment(SwingConstants.CENTER);
         labelTurno.setFont(new Font("Comic Sans MS", Font.PLAIN, 20));
-
 
         panelCentral.add(labelJugador);
         panelCentral.add(labelCPU);
         panelCentral.add(labelTurno);
 
-        // No pongas setBounds en BorderLayout, se ajusta solo
-
-
         panelTablero.setLayout(new BorderLayout());
-        panelTablero.setBounds(0,0, frame.getWidth()-MARGEN_FRAME_WIDTH, frame.getHeight()-MARGEN_FRAME_HEIGHT); // o el tamaño que desees
+        panelTablero.setBounds(0, 0, frame.getWidth()-MARGEN_FRAME_WIDTH, frame.getHeight()-MARGEN_FRAME_HEIGHT);
         panelTablero.setLayout(new BorderLayout());
         panelTablero.setBackground(Color.DARK_GRAY);
 
+        panelTablero.add(panelJugador, BorderLayout.EAST);
+        panelTablero.add(panelCPU, BorderLayout.WEST);
+        panelTablero.add(panelCentral, BorderLayout.CENTER);
 
-        
+
+        frame.add(panelTablero);
+        frame.setVisible(true);
+    }
+    
+    private void iniciarNuevaPartida() {
+        // Inicializar tableros
         llenarTableroCPU();
-
-        for(int i=0; i<16;i++){
-            for(int j=0; j<16;j++){
+        
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
                 this.puntosDeTiroJugador[i][j].setEnabled(false);
                 this.puntosDeTiroJugador[i][j].setFocusable(false);
                 this.puntosDeTiroJugador[i][j].putClientProperty("SeDisparo", false);
                 panelJugador.add(this.puntosDeTiroJugador[i][j]);
                 panelCPU.add(puntosDeTiroCPU[i][j]);
-            } 
+            }
         }
-
+        
         tiroJugador();
-
-        panelTablero.add(panelJugador, BorderLayout.EAST);
-        panelTablero.add(panelCPU, BorderLayout.WEST );
-        panelTablero.add(panelCentral, BorderLayout.CENTER);
-
-        frame.add(panelTablero);
-        frame.setVisible(true);
-
-
+        turno = TURNO_JUGADOR;
+        labelTurno.setText("Turno: JUGADOR");
+        labelTurno.setForeground(Color.MAGENTA);
     }
 
-    //Agregar flujo con metodos creados.
-
+    public EstadoPartidaBShip getEstadoPartida() {
+        EstadoPartidaBShip estado = new EstadoPartidaBShip();
     
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                estado.jugadorOcupado[i][j] = Boolean.TRUE.equals(puntosDeTiroJugador[i][j].getClientProperty("ocupado"));
+                estado.jugadorDisparo[i][j] = Boolean.TRUE.equals(puntosDeTiroJugador[i][j].getClientProperty("SeDisparo"));
+                estado.cpuOcupado[i][j] = Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("ocupado"));
+                estado.cpuDisparo[i][j] = Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("SeDisparo"));
+            }
+        }
+    
+        estado.turnoJugador = turno;
+        estado.barcoEncontrado = barcoEncontrado;
+        estado.filaActual = filaActual;
+        estado.columnaActual = columnaActual;
+        
+        // Guardar direcciones de búsqueda
+        estado.direccionesDeBusqueda = new int[direccionesDeBusqueda.size()];
+        for (int i = 0; i < direccionesDeBusqueda.size(); i++) {
+            estado.direccionesDeBusqueda[i] = direccionesDeBusqueda.get(i);
+        }
+    
+        return estado;
+    }
 
-    public void llenarTableroCPU(){
-        for(int i=0; i<16;i++){
-            for(int j=0; j<16;j++){
+    public void cargarEstado(EstadoPartidaBShip estado) {
+        // Cargar estado de tableros
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                // Configurar propiedades del jugador
+                puntosDeTiroJugador[i][j].putClientProperty("ocupado", estado.jugadorOcupado[i][j]);
+                puntosDeTiroJugador[i][j].putClientProperty("SeDisparo", estado.jugadorDisparo[i][j]);
+                
+                // Actualizar colores del tablero del jugador según el estado
+                if (estado.jugadorDisparo[i][j]) {
+                    if (estado.jugadorOcupado[i][j]) {
+                        puntosDeTiroJugador[i][j].setBackground(Color.RED);
+                    } else {
+                        puntosDeTiroJugador[i][j].setBackground(Color.BLUE);
+                    }
+                    puntosDeTiroJugador[i][j].setEnabled(false);
+                }
+                else{
+                    if (estado.jugadorOcupado[i][j]) {
+                        puntosDeTiroJugador[i][j].setBackground(Color.GRAY);
+                    }
+                    puntosDeTiroJugador[i][j].setEnabled(false);
+                }
+                panelJugador.add(puntosDeTiroJugador[i][j]);
+                
+                // Si no existe el tablero CPU, crearlo
+                if (puntosDeTiroCPU[i][j] == null) {
+                    puntosDeTiroCPU[i][j] = new JButton();
+                    panelCPU.add(puntosDeTiroCPU[i][j]);
+                }
+                
+                // Configurar propiedades de la CPU
+                puntosDeTiroCPU[i][j].putClientProperty("ocupado", estado.cpuOcupado[i][j]);
+                puntosDeTiroCPU[i][j].putClientProperty("SeDisparo", estado.cpuDisparo[i][j]);
+                
+                // Actualizar colores del tablero de la CPU según el estado
+                if (estado.cpuDisparo[i][j]) {
+                    if (estado.cpuOcupado[i][j]) {
+                        puntosDeTiroCPU[i][j].setBackground(Color.RED);
+                    } else {
+                        puntosDeTiroCPU[i][j].setBackground(Color.BLUE);
+                    }
+                    puntosDeTiroCPU[i][j].setEnabled(false);
+                } else {
+                    puntosDeTiroCPU[i][j].setBackground(Color.CYAN);
+                    puntosDeTiroCPU[i][j].setEnabled(true);
+                }
+
+            }
+        }
+    
+        // Cargar estado del juego
+        turno = estado.turnoJugador;
+        barcoEncontrado = estado.barcoEncontrado;
+        filaActual = estado.filaActual;
+        columnaActual = estado.columnaActual;
+        
+        // Cargar direcciones de búsqueda
+        direccionesDeBusqueda.clear();
+        if (estado.direccionesDeBusqueda != null) {
+            for (int dir : estado.direccionesDeBusqueda) {
+                direccionesDeBusqueda.add(dir);
+            }
+        }
+        
+        // Configurar turno visual
+        if (turno == TURNO_JUGADOR) {
+            labelTurno.setText("Turno: JUGADOR");
+            labelTurno.setForeground(Color.MAGENTA);
+            // Habilitar botones para el jugador
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 16; j++) {
+                    if (!Boolean.TRUE.equals(puntosDeTiroCPU[i][j].getClientProperty("SeDisparo"))) {
+                        puntosDeTiroCPU[i][j].setEnabled(true);
+                    }
+                }
+            }
+        } else {
+            labelTurno.setText("Turno: CPU");
+            labelTurno.setForeground(Color.ORANGE);
+            // Deshabilitar botones cuando es turno de la CPU
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 16; j++) {
+                    puntosDeTiroCPU[i][j].setEnabled(false);
+                }
+            }
+            // Si es turno de la CPU, programar su tiro después de un breve retraso
+            Timer timer = new Timer(1000, e -> tiroProgramadoCPU());
+            timer.setRepeats(false);
+            timer.start();
+        }
+        
+        // Asegurarse de que los listeners estén configurados
+        tiroJugador();
+    }
+    
+    public void guardarPartida() {
+        EstadoPartidaBShip estado = getEstadoPartida();
+        boolean guardadoExitoso = archivo.guardar(estado);
+        if (guardadoExitoso) {
+            System.out.println("Partida guardada correctamente");
+        } else {
+            System.err.println("Error al guardar la partida");
+        }
+    }
+
+    public void llenarTableroCPU() {
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
                 puntosDeTiroCPU[i][j] = new JButton();
                 puntosDeTiroCPU[i][j].setBackground(Color.CYAN);
-                puntosDeTiroCPU[i][j].putClientProperty("ocupado", false); // Initialize as false
+                puntosDeTiroCPU[i][j].putClientProperty("ocupado", false);
                 puntosDeTiroCPU[i][j].putClientProperty("SeDisparo", false);
-                panelCPU.add(puntosDeTiroCPU[i][j]);
-            } 
+            }
         }
         asignarBarcosAleatoriamenteCPU();
     }
+
+
 
     public void asignarBarcosAleatoriamenteCPU(){
         Random rdm = new Random();
@@ -378,6 +531,9 @@ public class VentanaJuegoBShip {
                             delayCPU.setRepeats(false);
                             delayCPU.start();                        }
                     }
+                    ArchivoJuegoBShip archivo = new ArchivoJuegoBShip("partida.dat");
+                    archivo.guardar(getEstadoPartida());
+
                     });
             }
         }
@@ -513,6 +669,14 @@ public class VentanaJuegoBShip {
         }
     }
 
+    public boolean eliminarPartidaGuardada() {
+        File f = new File(RUTA_GUARDADO);
+        if (f.exists()) {
+            return f.delete();
+        }
+        return true;
+    }
+
     public void verificarVictoria(){
         int contadorVictoriaCPU = 0;
         int contadorVictoriaJugador = 0;
@@ -532,11 +696,13 @@ public class VentanaJuegoBShip {
             //Accion para acabar el juego y mostrar una check box con un mensaje de victoria.
             JOptionPane.showMessageDialog(frame, "Ha ganado la CPU!!");
             frame.setVisible(false);
+            eliminarPartidaGuardada();
             new MenuBShip();
         }
         if(contadorVictoriaJugador == 26){
             JOptionPane.showMessageDialog(frame, "Ha ganado el JUGADOR!!");
             frame.setVisible(false);
+            eliminarPartidaGuardada();
             new MenuBShip();
             //Accion para acabar el juego y mostrar una check box con un mensaje de victoria.
         }
